@@ -7,12 +7,12 @@ namespace dotNetJustEat.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UserManagerControllercs : ControllerBase
+    public class AuthController : ControllerBase
     {
         private readonly UserManager<UserCredentials> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
-        public UserManagerControllercs(
+        public AuthController(
             UserManager<UserCredentials> userManager,
             RoleManager<IdentityRole> roleManager
         )
