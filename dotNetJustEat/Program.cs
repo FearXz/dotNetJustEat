@@ -25,7 +25,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 });
 
 builder
-    .Services.AddIdentityCore<ApplicationUser>()
+    .Services.AddIdentityCore<UserCredentials>()
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddApiEndpoints();
 
@@ -59,6 +60,6 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.MapIdentityApi<ApplicationUser>();
+app.MapIdentityApi<UserCredentials>();
 
 app.Run();

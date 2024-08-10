@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace dotNetJustEat.Migrations
 {
     /// <inheritdoc />
-    public partial class addedIdentity : Migration
+    public partial class AllUser : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -156,6 +156,57 @@ namespace dotNetJustEat.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "CompanyRegistries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserCredentialsId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CompanyName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    VATNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    City = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CAP = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    TelephoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MobileNumber = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CompanyRegistries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_CompanyRegistries_AspNetUsers_UserCredentialsId",
+                        column: x => x.UserCredentialsId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserRegistries",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserCredentialsId = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Surname = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    City = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CAP = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MobileNumber = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserRegistries", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_UserRegistries_AspNetUsers_UserCredentialsId",
+                        column: x => x.UserCredentialsId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -194,6 +245,18 @@ namespace dotNetJustEat.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CompanyRegistries_UserCredentialsId",
+                table: "CompanyRegistries",
+                column: "UserCredentialsId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRegistries_UserCredentialsId",
+                table: "UserRegistries",
+                column: "UserCredentialsId",
+                unique: true);
         }
 
         /// <inheritdoc />
@@ -213,6 +276,12 @@ namespace dotNetJustEat.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "CompanyRegistries");
+
+            migrationBuilder.DropTable(
+                name: "UserRegistries");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

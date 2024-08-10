@@ -12,8 +12,8 @@ using dotNetJustEat.Context;
 namespace dotNetJustEat.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240810090708_addedIdentity")]
-    partial class addedIdentity
+    [Migration("20240810161429_AllUser")]
+    partial class AllUser
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -158,7 +158,55 @@ namespace dotNetJustEat.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("dotNetJustEat.Entities.ApplicationUser", b =>
+            modelBuilder.Entity("dotNetJustEat.Entities.CompanyRegistry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CAP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CompanyName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MobileNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TelephoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCredentialsId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("VATNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserCredentialsId")
+                        .IsUnique();
+
+                    b.ToTable("CompanyRegistries");
+                });
+
+            modelBuilder.Entity("dotNetJustEat.Entities.UserCredentials", b =>
                 {
                     b.Property<string>("Id")
                         .HasColumnType("nvarchar(450)");
@@ -223,6 +271,50 @@ namespace dotNetJustEat.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("dotNetJustEat.Entities.UserRegistry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CAP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("MobileNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Surname")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserCredentialsId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserCredentialsId")
+                        .IsUnique();
+
+                    b.ToTable("UserRegistries");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -234,7 +326,7 @@ namespace dotNetJustEat.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("dotNetJustEat.Entities.ApplicationUser", null)
+                    b.HasOne("dotNetJustEat.Entities.UserCredentials", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -243,7 +335,7 @@ namespace dotNetJustEat.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("dotNetJustEat.Entities.ApplicationUser", null)
+                    b.HasOne("dotNetJustEat.Entities.UserCredentials", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -258,7 +350,7 @@ namespace dotNetJustEat.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("dotNetJustEat.Entities.ApplicationUser", null)
+                    b.HasOne("dotNetJustEat.Entities.UserCredentials", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -267,10 +359,41 @@ namespace dotNetJustEat.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<string>", b =>
                 {
-                    b.HasOne("dotNetJustEat.Entities.ApplicationUser", null)
+                    b.HasOne("dotNetJustEat.Entities.UserCredentials", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("dotNetJustEat.Entities.CompanyRegistry", b =>
+                {
+                    b.HasOne("dotNetJustEat.Entities.UserCredentials", "UserCredentials")
+                        .WithOne("CompanyRegistry")
+                        .HasForeignKey("dotNetJustEat.Entities.CompanyRegistry", "UserCredentialsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserCredentials");
+                });
+
+            modelBuilder.Entity("dotNetJustEat.Entities.UserRegistry", b =>
+                {
+                    b.HasOne("dotNetJustEat.Entities.UserCredentials", "UserCredentials")
+                        .WithOne("UserRegistry")
+                        .HasForeignKey("dotNetJustEat.Entities.UserRegistry", "UserCredentialsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("UserCredentials");
+                });
+
+            modelBuilder.Entity("dotNetJustEat.Entities.UserCredentials", b =>
+                {
+                    b.Navigation("CompanyRegistry")
+                        .IsRequired();
+
+                    b.Navigation("UserRegistry")
                         .IsRequired();
                 });
 #pragma warning restore 612, 618
