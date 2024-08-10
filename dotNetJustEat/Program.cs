@@ -1,9 +1,13 @@
 using dotNetJustEat.Context;
 using dotNetJustEat.Entities;
+using dotNetJustEat.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Register all services
+builder.Services.RegisterAllServices(builder.Configuration);
 
 // Add services to the container.
 

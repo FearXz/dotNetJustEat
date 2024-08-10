@@ -27,7 +27,7 @@
 
   <ItemGroup>
     <Folder Include="Controllers\" />
-    <Folder Include="DTO\" />
+    <Folder Include="DTOs\" />
   </ItemGroup>
 
 </Project>
