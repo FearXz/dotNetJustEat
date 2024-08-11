@@ -184,8 +184,8 @@ namespace dotNetJustEat.Services
                     if (!addRoleResult.Succeeded)
                         throw new Exception("Error adding role to user");
 
-                    _db.UserRegistries.Add(userRegistry);
-                    _db.SaveChanges();
+                    await _db.UserRegistries.AddAsync(userRegistry);
+                    await _db.SaveChangesAsync();
                     await transaction.CommitAsync();
 
                     return new UserRegisterResponse { Success = true, NewUserId = user.Id };
