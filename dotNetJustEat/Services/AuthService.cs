@@ -189,6 +189,7 @@ namespace dotNetJustEat.Services
 
                     await _db.UserRegistries.AddAsync(userRegistry);
                     await _db.SaveChangesAsync();
+
                     await transaction.CommitAsync();
 
                     return new UserRegisterResponse { Success = true, NewUserId = user.Id };
