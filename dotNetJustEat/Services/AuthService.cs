@@ -188,7 +188,6 @@ namespace dotNetJustEat.Services
                         throw new Exception("Error adding role to user");
 
                     var addRegistryResult = await _userManager.AddUserRegistriesAsync(userRegistry);
-                    await _db.SaveChangesAsync();
 
                     await transaction.CommitAsync();
 
