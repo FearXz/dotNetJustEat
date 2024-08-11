@@ -38,8 +38,15 @@ namespace dotNetJustEat.Services
 
         public async Task<UserRegistry> AddUserRegistriesAsync(UserRegistry userRegistry)
         {
-            await _db.UserRegistries.AddAsync(userRegistry);
-            await _db.SaveChangesAsync();
+            try
+            {
+                await _db.UserRegistries.AddAsync(userRegistry);
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
 
             return userRegistry;
         }
