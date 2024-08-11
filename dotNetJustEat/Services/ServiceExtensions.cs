@@ -2,10 +2,12 @@
 {
     public static class ServiceExtensions
     {
-        public static void RegisterAllServices(
+        public static IServiceCollection RegisterAllServices(
             this IServiceCollection services,
             IConfiguration configuration
         )
-        { }
+        {
+            return services;
+        }
     }
 }
