@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using dotNetJustEat.DTOs;
 using dotNetJustEat.Entities;
+using dotNetJustEat.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
@@ -18,17 +19,78 @@ namespace dotNetJustEat.Controllers
         private readonly SignInManager<UserCredentials> _signInManager;
         private readonly IConfiguration _configuration;
 
+        private readonly IAuthService _authSvc;
+
         public AuthController(
             UserManager<UserCredentials> userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<UserCredentials> signInManager,
-            IConfiguration configuration
+            IConfiguration configuration,
+            IAuthService authService
         )
         {
             _userManager = userManager;
             _roleManager = roleManager;
             _signInManager = signInManager;
             _configuration = configuration;
+            _authSvc = authService;
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest login)
+        {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                LoginResponse result = await _authSvc.Login(login);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest tokens)
+        {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError(string.Empty, "Invalid refresh token request.");
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                RefreshTokenResponse result = await _authSvc.RefreshToken(tokens);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] UserRegisterRequest newUser)
+        {
+            if (!ModelState.IsValid)
+            {
+                ModelState.AddModelError(string.Empty, "Invalid registration attempt.");
+                return BadRequest(ModelState);
+            }
+            try
+            {
+                UserRegisterResponse result = await _authSvc.Register(newUser);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpPost("AddUserRole")]
@@ -70,154 +132,6 @@ namespace dotNetJustEat.Controllers
             }
 
             return BadRequest(result.Errors);
-        }
-
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest model)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var result = await _signInManager.PasswordSignInAsync(
-                model.Email,
-                model.Password,
-                true,
-                lockoutOnFailure: false
-            );
-
-            if (result.Succeeded)
-            {
-                var user = await _userManager.FindByEmailAsync(model.Email);
-                var accessToken = GenerateToken(user); // 1 ora per l'access token
-                var refreshToken = GenerateToken(user); // 90 giorni per il refresh token (90 * 24 ore)
-
-                var token = new IdentityUserToken<string>
-                {
-                    UserId = user.Id,
-                    LoginProvider = "MyApp",
-                    Name = "RefreshToken",
-                    Value = refreshToken
-                };
-
-                await _userManager.SetAuthenticationTokenAsync(
-                    user,
-                    token.LoginProvider,
-                    token.Name,
-                    token.Value
-                );
-
-                return Ok(
-                    new
-                    {
-                        AccessToken = accessToken,
-                        Duration = 3600,
-                        RefreshToken = refreshToken
-                    }
-                );
-            }
-
-            if (result.IsLockedOut)
-            {
-                return BadRequest(new { Message = "User account locked out." });
-            }
-
-            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-            return BadRequest(ModelState);
-        }
-
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest model)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            var user = new UserCredentials { UserName = model.Email, Email = model.Email };
-            var result = await _userManager.CreateAsync(user, model.Password);
-
-            if (result.Succeeded)
-            {
-                return Ok(new { Message = "User registered successfully" });
-            }
-
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-
-            return BadRequest(ModelState);
-        }
-
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest model)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            try
-            {
-                var accessTokenUserId = GetIdFromToken(model.AccessToken);
-                var refreshTokenUserId = GetIdFromToken(model.RefreshToken);
-
-                if (refreshTokenUserId == null)
-                {
-                    return BadRequest("The refresh token has expired or is invalid.");
-                }
-                if (accessTokenUserId != refreshTokenUserId)
-                {
-                    return BadRequest(
-                        "The user ID in the access token does not match the user ID in the refresh token."
-                    );
-                }
-
-                var user = await _userManager.FindByIdAsync(accessTokenUserId);
-
-                if (user == null)
-                {
-                    return BadRequest("Invalid client request");
-                }
-
-                var storedRefreshToken = await _userManager.GetAuthenticationTokenAsync(
-                    user,
-                    "MyApp",
-                    "RefreshToken"
-                );
-
-                if (storedRefreshToken != model.RefreshToken || storedRefreshToken == null)
-                {
-                    return BadRequest("Invalid refresh token");
-                }
-
-                var newAccessToken = GenerateToken(user); // 1 ora per l'access token
-                var newRefreshToken = GenerateToken(user); // 90 giorni per il refresh token (90 * 24 ore)
-
-                await _userManager.SetAuthenticationTokenAsync(
-                    user,
-                    "MyApp",
-                    "RefreshToken",
-                    newRefreshToken
-                );
-
-                return Ok(
-                    new
-                    {
-                        AccessToken = newAccessToken,
-                        Duration = 3600,
-                        RefreshToken = newRefreshToken
-                    }
-                );
-            }
-            catch (SecurityTokenExpiredException)
-            {
-                return BadRequest("The access token has expired.");
-            }
-            catch (SecurityTokenException)
-            {
-                return BadRequest("Invalid access token.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
         }
 
         private string GenerateToken(UserCredentials user)

@@ -1,4 +1,6 @@
-﻿namespace dotNetJustEat.Services
+﻿using dotNetJustEat.Interfaces;
+
+namespace dotNetJustEat.Services
 {
     public static class ServiceExtensions
     {
@@ -7,6 +9,8 @@
             IConfiguration configuration
         )
         {
+            services.AddScoped<IAuthService, AuthService>();
+
             return services;
         }
     }
