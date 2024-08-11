@@ -50,8 +50,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder
     .Services.AddIdentityCore<UserCredentials>()
     .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>()
-    .AddApiEndpoints();
+    .AddSignInManager()
+    .AddDefaultTokenProviders()
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+//.AddSignInManager<SignInManager<UserCredentials>>()
+//.AddApiEndpoints();
 
 builder.Services.AddCors(options =>
 {
