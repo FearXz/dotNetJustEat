@@ -177,7 +177,14 @@ namespace dotNetJustEat.Controllers
                 newRefreshToken
             );
 
-            return Ok(new { AccessToken = newAccessToken, RefreshToken = newRefreshToken });
+            return Ok(
+                new
+                {
+                    AccessToken = newAccessToken,
+                    Duration = 3600,
+                    RefreshToken = newRefreshToken
+                }
+            );
         }
 
         private string GenerateJwtToken(UserCredentials user)
