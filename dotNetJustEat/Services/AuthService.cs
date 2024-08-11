@@ -189,6 +189,9 @@ namespace dotNetJustEat.Services
 
                     var addRegistryResult = await _userManager.AddUserRegistriesAsync(userRegistry);
 
+                    if (addRegistryResult == null)
+                        throw new Exception("Error adding user registry");
+
                     await transaction.CommitAsync();
 
                     return new UserRegisterResponse { Success = true, NewUserId = user.Id };
