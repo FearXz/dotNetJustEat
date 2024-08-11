@@ -1,6 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using dotNetJustEat.DTOs;
 using dotNetJustEat.Entities;
@@ -89,8 +88,8 @@ namespace dotNetJustEat.Controllers
             if (result.Succeeded)
             {
                 var user = await _userManager.FindByEmailAsync(model.Email);
-                var accessToken = GenerateJwtToken(user);
-                var refreshToken = GenerateRefreshToken();
+                var accessToken = GenerateToken(user); // 1 ora per l'access token
+                var refreshToken = GenerateToken(user); // 90 giorni per il refresh token (90 * 24 ore)
 
                 var token = new IdentityUserToken<string>
                 {
@@ -154,54 +153,81 @@ namespace dotNetJustEat.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var principal = GetPrincipalFromExpiredToken(model.AccessToken);
-            var userId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            var user = await _userManager.FindByIdAsync(userId);
-
-            if (user == null)
+            try
             {
-                return BadRequest("Invalid client request");
-            }
+                var accessTokenUserId = GetIdFromToken(model.AccessToken);
+                var refreshTokenUserId = GetIdFromToken(model.RefreshToken);
 
-            var storedRefreshToken = await _userManager.GetAuthenticationTokenAsync(
-                user,
-                "MyApp",
-                "RefreshToken"
-            );
-
-            if (storedRefreshToken != model.RefreshToken || storedRefreshToken == null)
-            {
-                return BadRequest("Invalid refresh token");
-            }
-
-            var newAccessToken = GenerateJwtToken(user);
-            var newRefreshToken = GenerateRefreshToken();
-
-            await _userManager.SetAuthenticationTokenAsync(
-                user,
-                "MyApp",
-                "RefreshToken",
-                newRefreshToken
-            );
-
-            return Ok(
-                new
+                if (refreshTokenUserId == null)
                 {
-                    AccessToken = newAccessToken,
-                    Duration = 3600,
-                    RefreshToken = newRefreshToken
+                    return BadRequest("The refresh token has expired or is invalid.");
                 }
-            );
+                if (accessTokenUserId != refreshTokenUserId)
+                {
+                    return BadRequest(
+                        "The user ID in the access token does not match the user ID in the refresh token."
+                    );
+                }
+
+                var user = await _userManager.FindByIdAsync(accessTokenUserId);
+
+                if (user == null)
+                {
+                    return BadRequest("Invalid client request");
+                }
+
+                var storedRefreshToken = await _userManager.GetAuthenticationTokenAsync(
+                    user,
+                    "MyApp",
+                    "RefreshToken"
+                );
+
+                if (storedRefreshToken != model.RefreshToken || storedRefreshToken == null)
+                {
+                    return BadRequest("Invalid refresh token");
+                }
+
+                var newAccessToken = GenerateToken(user); // 1 ora per l'access token
+                var newRefreshToken = GenerateToken(user); // 90 giorni per il refresh token (90 * 24 ore)
+
+                await _userManager.SetAuthenticationTokenAsync(
+                    user,
+                    "MyApp",
+                    "RefreshToken",
+                    newRefreshToken
+                );
+
+                return Ok(
+                    new
+                    {
+                        AccessToken = newAccessToken,
+                        Duration = 3600,
+                        RefreshToken = newRefreshToken
+                    }
+                );
+            }
+            catch (SecurityTokenExpiredException)
+            {
+                return BadRequest("The access token has expired.");
+            }
+            catch (SecurityTokenException)
+            {
+                return BadRequest("Invalid access token.");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
-        private string GenerateJwtToken(UserCredentials user)
+        private string GenerateToken(UserCredentials user)
         {
             var jwt = _configuration.GetSection("Jwt");
             var key = Encoding.ASCII.GetBytes(jwt["Key"]);
 
             var claims = new[]
             {
-                new Claim("email", user.Email),
+                new Claim("Email", user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()), // Genera un jti unico
                 new Claim(ClaimTypes.NameIdentifier, user.Id), // Memorizza l'ID utente qui
                 new Claim(ClaimTypes.Name, user.UserName) // Memorizza il nome utente qui
@@ -224,17 +250,7 @@ namespace dotNetJustEat.Controllers
             return tokenHandler.WriteToken(token);
         }
 
-        private string GenerateRefreshToken()
-        {
-            var randomNumber = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(randomNumber);
-                return Convert.ToBase64String(randomNumber);
-            }
-        }
-
-        private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        private string GetIdFromToken(string token)
         {
             var tokenValidationParameters = new TokenValidationParameters
             {
@@ -244,10 +260,11 @@ namespace dotNetJustEat.Controllers
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])
                 ),
-                ValidateLifetime = false // here we are saying that we don't care about the token's expiration date
+                ValidateLifetime = false // Non validare la scadenza del token
             };
 
             var tokenHandler = new JwtSecurityTokenHandler();
+
             var principal = tokenHandler.ValidateToken(
                 token,
                 tokenValidationParameters,
@@ -266,7 +283,7 @@ namespace dotNetJustEat.Controllers
                 throw new SecurityTokenException("Invalid token");
             }
 
-            return principal;
+            return principal.FindFirstValue(ClaimTypes.NameIdentifier);
         }
     }
 }
