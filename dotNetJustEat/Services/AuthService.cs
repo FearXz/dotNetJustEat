@@ -166,7 +166,10 @@ namespace dotNetJustEat.Services
                     var result = await _userManager.CreateAsync(user, registerRequest.Password);
 
                     if (!result.Succeeded)
-                        throw new Exception("Error creating user");
+                    {
+                        var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                        throw new Exception($"Error creating user: {errors}");
+                    }
 
                     UserRegistry userRegistry = new UserRegistry
                     {
