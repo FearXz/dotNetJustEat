@@ -107,7 +107,14 @@ namespace dotNetJustEat.Controllers
                     token.Value
                 );
 
-                return Ok(new { AccessToken = accessToken, RefreshToken = refreshToken });
+                return Ok(
+                    new
+                    {
+                        AccessToken = accessToken,
+                        Duration = 3600,
+                        RefreshToken = refreshToken
+                    }
+                );
             }
 
             if (result.IsLockedOut)
