@@ -9,6 +9,7 @@ namespace dotNetJustEat.Services
             IConfiguration configuration
         )
         {
+            services.AddScoped<EUserManager>();
             services.AddScoped<IAuthService, AuthService>();
 
             return services;

@@ -13,7 +13,7 @@ namespace dotNetJustEat.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly UserManager<UserCredentials> _userManager;
+        private readonly EUserManager _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly SignInManager<UserCredentials> _signInManager;
         private readonly IConfiguration _configuration;
@@ -22,7 +22,7 @@ namespace dotNetJustEat.Services
         private const int TokenExpirationTime = 1; // 1 hour
 
         public AuthService(
-            UserManager<UserCredentials> userManager,
+            EUserManager userManager,
             RoleManager<IdentityRole> roleManager,
             SignInManager<UserCredentials> signInManager,
             IConfiguration configuration,
@@ -187,7 +187,7 @@ namespace dotNetJustEat.Services
                     if (!addRoleResult.Succeeded)
                         throw new Exception("Error adding role to user");
 
-                    await _db.UserRegistries.AddAsync(userRegistry);
+                    var addRegistryResult = await _userManager.AddUserRegistriesAsync(userRegistry);
                     await _db.SaveChangesAsync();
 
                     await transaction.CommitAsync();
